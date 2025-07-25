@@ -2,8 +2,10 @@
 #include <WiFi.h>
 #include <WebServer.h>
 
-const char* ssid = "devolo-108";
-const char* password = "BKAJYQKRJAEVHEFO";
+const char* ssid = "Schule";
+const char* password = "WlanAccess";
+
+#define FLASH_LED_PIN 4
 
 #define PWDN_GPIO_NUM     32
 #define RESET_GPIO_NUM    -1
@@ -108,4 +110,31 @@ void setup() {
 
 void loop() {
   server.handleClient();
+
+  camera_fb_t *fb = esp_camera_fb_get();
+  if (!fb) {
+    Serial.println("Fehler beim Bild holen");
+    return;
+  }
+
+  // Helligkeit berechnen (vereinfachter Ansatz: Mittelwert Grauwert)
+  uint32_t sum = 0;
+  for (size_t i = 0; i < fb->len; i++) {
+    sum += fb->buf[i];
+  }
+  float brightness = sum / (float)fb->len;
+
+  Serial.print("Helligkeit: ");
+  Serial.println(brightness);
+
+  // Licht steuern
+  if (brightness < 60) {
+    digitalWrite(FLASH_LED_PIN, HIGH); // Licht an
+  } else {
+    digitalWrite(FLASH_LED_PIN, LOW);  // Licht aus
+  }
+
+  esp_camera_fb_return(fb);
+
+  delay(300);
 }
